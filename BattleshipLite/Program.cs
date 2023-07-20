@@ -14,10 +14,116 @@ namespace BattleshipLite
         {
             WelcomeMessage();
 
-            PlayerInfoModel player1 = CreatePlayer("Player 1");
-            PlayerInfoModel player2 = CreatePlayer("Player 2");
+            PlayerInfoModel activePlayer = CreatePlayer("Player 1");
+            PlayerInfoModel opponent = CreatePlayer("Player 2");
+
+            PlayerInfoModel winner = null;
+
+            do
+            {
+                // Display grid from activePlayer on where they fired.
+                DisplayShotGrid(activePlayer);
+
+                // Ask activePlayer for a shot.
+                // Determine if it is a valid shot
+                // Determine shot results
+                RecordPlayerShot(activePlayer, opponent);
+
+                // Determine if game should continue
+                bool doesGameContinue = GameLogic.PlayerStillActive(opponent);
+
+                // If over, set activePlayer as the winner
+                // else, swap positions (activePlatey to opponent)
+                if (doesGameContinue)
+                {
+                    // Swap player using Tuple
+                    (activePlayer, opponent) = (opponent, activePlayer);
+                }
+                else
+                {
+                    winner = activePlayer;
+                }
+
+                IdentifyWinner(winner);
+
+            } while (winner == null);
 
             Console.ReadLine();
+        }
+
+        private static void IdentifyWinner(PlayerInfoModel winner)
+        {
+            Console.WriteLine($"Congratularions to {winner.UserName} for winning!");
+            Console.WriteLine($"{winner.UserName} took {GameLogic.GetShotCount(winner)} shots");
+        }
+
+        private static void RecordPlayerShot(PlayerInfoModel activePlayer, PlayerInfoModel opponent)
+        {
+            bool isValidShot = false;
+            string row = "";
+            int column = 0;
+
+            do
+            {
+                // Ask for a shot (we ask for "B2")
+                string shot = AskForShot();
+
+                // Determine what row an column that is - split it apart
+                (row, column) = GameLogic.SplitShotIntoRowAndColumn(shot);
+                
+                // Determine if that is a valid shot
+                isValidShot = GameLogic.ValidateShot(activePlayer, row, column);
+
+                // Go back to beginning if not a valid shot
+                if (!isValidShot)
+                {
+                    Console.WriteLine("Invalid shot location. Please try again.");
+                }
+            } while (!isValidShot);
+
+            // Determine shot results
+            bool isAHit = GameLogic.IdentifyShotResult(opponent, row, column);
+
+            // Record result
+            GameLogic.MarkShotResult(activePlayer, row, column, isAHit);
+        }
+
+        private static string AskForShot()
+        {
+            Console.Write("Pleace enter your shot selection: ");
+            string output = Console.ReadLine();
+            return output;
+        }
+
+        private static void DisplayShotGrid(PlayerInfoModel activePlayer)
+        {
+            string currentRow = activePlayer.ShotGrid[0].SpotLetter;
+
+            foreach (var gridSpot in activePlayer.ShotGrid)
+            {
+                if (gridSpot.SpotLetter != currentRow)
+                {
+                    Console.WriteLine();
+                    currentRow = gridSpot.SpotLetter;
+                }
+
+                if (gridSpot.Status == GridSpotStatus.Empty)
+                {
+                    Console.Write($" {gridSpot.SpotLetter}{gridSpot.SpotNumber} ");
+                }
+                else if (gridSpot.Status == GridSpotStatus.Hit)
+                {
+                    Console.Write(" X ");
+                }
+                else if (gridSpot.Status == GridSpotStatus.Miss)
+                {
+                    Console.Write(" O ");
+                }
+                else
+                {
+                    Console.WriteLine(" ? ");
+                }
+            }
         }
 
         private static void WelcomeMessage()
