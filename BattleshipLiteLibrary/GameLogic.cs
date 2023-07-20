@@ -10,6 +10,62 @@ namespace BattleshipLiteLibrary
 {
     public static class GameLogic
     {
+        public static void InitializeGrid(PlayerInfoModel model)
+        {
+            List<string> letters = new List<string>
+            {
+                "A",
+                "B",
+                "C",
+                "D",
+                "E"
+            };
+
+            List<int> numbers = new List<int>
+            {
+                1,
+                2,
+                3,
+                4,
+                5
+            };
+
+            foreach (string letter in letters)
+            {
+                foreach (int number in numbers)
+                {
+                    AddGridSpot(model, letter, number);
+                }
+            }
+        }
+
+        private static void AddGridSpot(PlayerInfoModel model, string letter, int number)
+        {
+            GridSpotModel spot = new GridSpotModel
+            {
+                SpotLetter = letter,
+                SpotNumber = number,
+                Status = GridSpotStatus.Empty
+            };
+
+            model.ShotGrid.Add(spot);
+        }
+
+        public static bool PlayerStillActive(PlayerInfoModel player)
+        {
+            bool isActive = false;
+
+            foreach (var ship in player.ShipLocations)
+            {
+                if (ship.Status != GridSpotStatus.Sunk)
+                {
+                    isActive = true;
+                }
+            }
+
+            return isActive;
+        }
+
         public static int GetShotCount(PlayerInfoModel player)
         {
             int shotCount = 0;
@@ -22,62 +78,6 @@ namespace BattleshipLiteLibrary
                 }
             }
             return shotCount;
-        }
-
-        public static bool IdentifyShotResult(PlayerInfoModel opponent, string row, int column)
-        {
-            bool isAHit = false;
-
-            foreach (var ship in opponent.ShipLocations)
-            {
-                if (ship.SpotLetter == row.ToUpper() && ship.SpotNumber == column)
-                {
-                    isAHit = true;
-                }
-            }
-            return isAHit;
-        }
-
-        public static void InitializeGrid(PlayerInfoModel model)
-        {
-            List<string> letters = new List<string>
-            {
-                "A",
-                "B",
-                "C",
-                "D",
-                "E"
-            };
-
-            List<int> numbers = new List<int> { 1, 2, 3, 4, 5 };
-
-            foreach (string letter in letters)
-            {
-                foreach (int number in numbers)
-                {
-                    AddGridSpot(model, letter, number);
-                }
-            }
-        }
-
-        public static void MarkShotResult(PlayerInfoModel player, string row, int column, bool isAHit)
-        {
-            bool isValidLocation = false;
-
-            foreach (var gridSpot in player.ShotGrid)
-            {
-                if (gridSpot.SpotLetter == row.ToUpper() && gridSpot.SpotNumber == column)
-                {
-                    if (isAHit)
-                    {
-                        gridSpot.Status = GridSpotStatus.Hit;
-                    }
-                    else
-                    {
-                        gridSpot.Status = GridSpotStatus.Miss;
-                    }
-                }
-            }
         }
 
         public static bool PlaceShip(PlayerInfoModel model, string location)
@@ -104,13 +104,13 @@ namespace BattleshipLiteLibrary
 
         private static bool ValidateShipLocation(PlayerInfoModel model, string row, int column)
         {
-            bool isValidLocation = false;
+            bool isValidLocation = true;
 
             foreach (var ship in model.ShipLocations)
             {
                 if (ship.SpotLetter == row.ToUpper() && ship.SpotNumber == column)
                 {
-                    isValidLocation = true;
+                    isValidLocation = false;
                 }
             }
             return isValidLocation;
@@ -128,21 +128,6 @@ namespace BattleshipLiteLibrary
                 }
             }
             return isValidLocation;
-        }
-
-        public static bool PlayerStillActive(PlayerInfoModel player)
-        {
-            bool isActive = false;
-
-            foreach (var ship in player.ShipLocations)
-            {
-                if (ship.Status != GridSpotStatus.Sunk)
-                {
-                    isActive = true;
-                }
-            }
-
-            return isActive;
         }
 
         public static (string row, int column) SplitShotIntoRowAndColumn(string shot)
@@ -179,16 +164,37 @@ namespace BattleshipLiteLibrary
             return isValidShot;
         }
 
-        private static void AddGridSpot(PlayerInfoModel model, string letter, int number)
+        public static bool IdentifyShotResult(PlayerInfoModel opponent, string row, int column)
         {
-            GridSpotModel spot = new GridSpotModel
-            {
-                SpotLetter = letter,
-                SpotNumber = number,
-                Status = GridSpotStatus.Empty
-            };
+            bool isAHit = false;
 
-            model.ShotGrid.Add(spot);
+            foreach (var ship in opponent.ShipLocations)
+            {
+                if (ship.SpotLetter == row.ToUpper() && ship.SpotNumber == column)
+                {
+                    isAHit = true;
+                    ship.Status = GridSpotStatus.Sunk;
+                }
+            }
+            return isAHit;
+        }
+
+        public static void MarkShotResult(PlayerInfoModel player, string row, int column, bool isAHit)
+        {
+            foreach (var gridSpot in player.ShotGrid)
+            {
+                if (gridSpot.SpotLetter == row.ToUpper() && gridSpot.SpotNumber == column)
+                {
+                    if (isAHit)
+                    {
+                        gridSpot.Status = GridSpotStatus.Hit;
+                    }
+                    else
+                    {
+                        gridSpot.Status = GridSpotStatus.Miss;
+                    }
+                }
+            }
         }
     }
 }
